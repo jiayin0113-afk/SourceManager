@@ -6,9 +6,6 @@ SourceManager 是一套全新的版本控制系统，从第一行代码起就按
 - **`LibSM`** —— 版本控制引擎（对象存储、索引、引用、合并、reflog、传输协议）。
 - **`sm`** —— 构建在引擎之上的命令行前端（porcelain / plumbing）。
 
-> 本 README 是项目的**入口与快速上手**。设计立场、契约取舍与逐条决策记录在
-> [`DESIGN-STANCE.md`](DESIGN-STANCE.md)；两者的定位不同，请勿混用。
-
 ---
 
 ## 特性
@@ -103,14 +100,3 @@ pwsh tests/run-tests.ps1
 ```
 
 套件会针对临时目录中的一次性仓库运行真实的 `sm` 二进制，并断言可观测行为（退出码、stdout/stderr、仓库状态）。
-
----
-
-## 文档
-
-| 文档 | 内容 |
-|---|---|
-| `README.md`（本文件） | 项目入口、构建、快速上手 |
-| [`DESIGN-STANCE.md`](DESIGN-STANCE.md) | 设计立场与契约决策（与 Git 的差异、待定项、实现记录） |
-| [`docs/index.html`](docs/index.html) | 项目文档站点 |
-| `sm help <command>` | 各命令的即时用法 |
