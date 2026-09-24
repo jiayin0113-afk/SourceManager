@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+artifacts/
+_test_compile/
+temp_test/
+
+# .NET
+*.user
+*.suo
+.vs/
+.vscode/
+[Dd]ebug/
+[Rr]elease/
+*.dll
+*.pdb
+*.exe
+
+# OS
+.DS_Store
+Thumbs.db

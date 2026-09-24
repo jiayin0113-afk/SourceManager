@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SourceManager (sm) — 完整文档</title>
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --ink:#1f2430; --muted:#5b6472; --line:#e3e6ec;
+  --brand:#2f6fed; --brand-ink:#1b4fc4; --code-bg:#f2f4f8; --code-ink:#252b36;
+  --ok:#1f9d55; --warn:#b7791f; --bad:#c53030; --accent:#0f766e;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+}
+a{color:var(--brand); text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd,pre{font-family:"JetBrains Mono","Cascadia Code",Consolas,"SFMono-Regular",Menlo,monospace}
+code{background:var(--code-bg); color:var(--code-ink); padding:.12em .38em; border-radius:4px; font-size:.88em}
+pre{
+  background:#1e2430; color:#e6e9ef; padding:16px 18px; border-radius:10px;
+  overflow:auto; font-size:13px; line-height:1.6; box-shadow:var(--shadow);
+}
+pre code{background:none; color:inherit; padding:0; font-size:inherit}
+kbd{background:#fff; border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:.05em .4em; font-size:.82em}
+
+/* layout */
+.wrap{display:flex; max-width:1500px; margin:0 auto; align-items:flex-start}
+aside{
+  position:sticky; top:0; align-self:flex-start; width:288px; height:100vh; overflow:auto;
+  background:var(--panel); border-right:1px solid var(--line); padding:20px 16px 60px;
+}
+main{flex:1; min-width:0; padding:32px 44px 100px; max-width:1040px}
+
+/* sidebar */
+.brand{display:flex; align-items:center; gap:10px; margin:0 6px 6px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#2f6fed,#0f766e);display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.5px}
+.brand b{font-size:17px}
+.brand .ver{display:block;color:var(--muted);font-size:11.5px;font-weight:500;letter-spacing:.02em}
+.search{position:relative;margin:14px 6px 10px}
+.search input{width:100%;padding:9px 12px 9px 32px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13.5px;outline:none}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(47,111,237,.12)}
+.search svg{position:absolute;left:10px;top:9px;opacity:.5}
+nav a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);font-size:13.5px}
+nav a:hover{background:#eef1f7;text-decoration:none}
+nav .grp{margin:16px 10px 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+nav a.active{background:#e7efff;color:var(--brand-ink);font-weight:600}
+
+/* headings */
+h1{font-size:34px;line-height:1.25;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:24px;margin:52px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line);letter-spacing:-.01em;scroll-margin-top:20px}
+h3{font-size:18.5px;margin:32px 0 10px;scroll-margin-top:20px}
+h4{font-size:15.5px;margin:20px 0 8px;color:var(--brand-ink)}
+p{margin:10px 0}
+.lead{font-size:17px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#1e2430,#2a3a5c 60%,#0f766e);color:#fff;border-radius:16px;padding:34px 36px;margin-bottom:8px;box-shadow:var(--shadow)}
+.hero h1{color:#fff}
+.hero .lead{color:#c6d0e2;max-width:760px}
+.hero .chips{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:4px 11px;border-radius:999px;font-size:12.5px}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 6px}
+.card p{margin:0;color:var(--muted);font-size:13.5px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f0f3f8;font-weight:700;font-size:12.5px;letter-spacing:.02em;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+.tbl-scroll{overflow-x:auto}
+
+/* callouts */
+.note,.warn,.tip{border-radius:9px;padding:12px 16px;margin:16px 0;border-left:4px solid;font-size:14px}
+.note{background:#eef4ff;border-color:var(--brand)}
+.warn{background:#fff6e6;border-color:var(--warn)}
+.tip{background:#e9fbf3;border-color:var(--ok)}
+.note b,.warn b,.tip b{font-weight:700}
+
+/* command blocks */
+.cmd{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:18px 0;box-shadow:var(--shadow)}
+.cmd-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 4px}
+.cmd-h h3{margin:0;font-size:18px}
+.cmd-h .sig{font-family:monospace;background:var(--code-bg);padding:2px 8px;border-radius:6px;font-size:12.5px;color:var(--brand-ink)}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.badge.json{background:#e7efff;color:var(--brand-ink)}
+.badge.core{background:#e9fbf3;color:var(--ok)}
+.badge.plumb{background:#f3e8ff;color:#7c3aed}
+.badge.net{background:#fff1f0;color:var(--bad)}
+.cmd .desc{color:var(--muted);margin:6px 0 12px;font-size:14px}
+
+.anchor{opacity:0;font-size:.72em;margin-left:6px;color:var(--muted)}
+h2:hover .anchor,h3:hover .anchor{opacity:1}
+
+mark{background:#fff2a8;padding:0 2px;border-radius:2px}
+.hide{display:none !important}
+.footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);margin-top:60px;padding-top:18px}
+
+/* responsive */
+@media(max-width:1000px){
+  aside{display:none}
+  main{padding:22px 18px 80px}
+  .hero{padding:26px 22px}
+}
+#totop{position:fixed;right:22px;bottom:22px;background:var(--brand);color:#fff;border:0;border-radius:50%;width:44px;height:44px;font-size:18px;cursor:pointer;box-shadow:var(--shadow);display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<!-- ============================ SIDEBAR ============================ -->
+<aside>
+  <div class="brand">
+    <div class="logo">sm</div>
+    <div><b>SourceManager</b><span class="ver">v1.0.0 · 文档</span></div>
+  </div>
+  <div class="search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="q" type="search" placeholder="搜索命令或主题…" autocomplete="off">
+  </div>
+  <nav id="nav">
+    <div class="grp">开始</div>
+    <a href="#overview">概述</a>
+    <a href="#install">安装与构建</a>
+    <a href="#quickstart">快速开始</a>
+    <a href="#concepts">核心概念</a>
+    <div class="grp">参考</div>
+    <a href="#commands">命令参考</a>
+    <a href="#revision">修订语法</a>
+    <a href="#dates">日期格式</a>
+    <a href="#config">配置</a>
+    <a href="#ignore">忽略规则</a>
+    <a href="#hooks">钩子</a>
+    <a href="#json">JSON 输出</a>
+    <a href="#exit">退出码与输出约定</a>
+    <a href="#environment">环境变量</a>
+    <div class="grp">内部与进阶</div>
+    <a href="#layout">仓库结构</a>
+    <a href="#objects">对象格式</a>
+    <a href="#protocol">远程协议与服务器</a>
+    <a href="#architecture">架构与执行流程</a>
+    <a href="#testing">测试</a>
+  </nav>
+</aside>
+
+<!-- ============================ MAIN ============================ -->
+<main>
+
+<section class="hero">
+  <h1>SourceManager 完整文档</h1>
+  <p class="lead"><code>sm</code> 是一个用 C# / .NET 10 实现的下一代版本控制系统。它采用 SHA-256 内容寻址存储、对象化的提交历史、分支/标签/变基/贮藏等工作流，并提供基于 JSON 的远程传输与内置服务器。</p>
+  <div class="chips">
+    <span class="chip">.NET 10 · C# 13</span>
+    <span class="chip">SHA-256 内容寻址</span>
+    <span class="chip">44 个命令</span>
+    <span class="chip">JSON 机器可读输出</span>
+    <span class="chip">原生 sm:// 协议</span>
+    <span class="chip">二进制帧 + 握手</span>
+    <span class="chip">file / HTTP / SSH 兼容</span>
+    <span class="chip">版本 1.0.0</span>
+  </div>
+</section>
+
+<!-- ============================ OVERVIEW ============================ -->
+<h2 id="overview">概述 <a class="anchor" href="#overview">#</a></h2>
+<p><b>SourceManager</b>（命令行名为 <code>sm</code>）是一个自包含的分布式版本控制系统，提供提交、分支、合并、变基、贮藏、标签与远程协作等完整工作流，并采用自有协议与简洁一致的对象模型。</p>
+
+<div class="grid">
+  <div class="card"><h4>内容寻址存储</h4><p>每个对象以 SHA-256 摘要命名，松散对象使用 zlib 压缩存放在 <code>.sm/objects/</code> 下。</p></div>
+  <div class="card"><h4>完整工作流</h4><p>暂存、提交、分支、合并、变基、拣选、回退、贮藏、重置、二分查找一应俱全。</p></div>
+  <div class="card"><h4>机器可读输出</h4><p>15 个命令支持 <code>--json</code>，输出带版本信封的结构化文档，便于脚本与 CI 集成。</p></div>
+  <div class="card"><h4>内置协作能力</h4><p><code>sm serve</code> 提供自有 <code>sm://</code> 协议服务端（二进制帧），并保留 HTTP/stdio 作为兼容承载。</p></div>
+</div>
+
+<h3>设计要点</h3>
+<ul>
+  <li><b>单一入口：</b>所有命令注册在 <code>Program.cs</code> 的根解析器中，统一处理别名、全局选项与帮助。</li>
+  <li><b>规范化编码：</b>对象的提交/标签负载强制使用 LF 换行，因为换行符也会参与哈希计算。</li>
+  <li><b>读写分离的引用存储：</b>分支、标签、远程跟踪引用分别落在 <code>refs/heads</code>、<code>refs/tags</code>、<code>refs/remotes</code> 下，另有 <code>logs/</code> 记录 reflog。</li>
+  <li><b>自有传输协议：</b><code>sm://</code> 在 TCP 上使用二进制帧与版本握手；对象以“未压缩负载 + Base64”的 JSON 负载传输。</li>
+</ul>
+
+<div class="note"><b>命名说明：</b>本文中 <code>sm</code> 指 SourceManager 可执行文件；<code>.sm</code> 指非裸仓库的元数据目录。示例命令默认在仓库工作树内执行。</div>
+
+<!-- ============================ INSTALL ============================ -->
+<h2 id="install">安装与构建 <a class="anchor" href="#install">#</a></h2>
+<p>项目为单个 .NET SDK 项目（<code>SourceManager.csproj</code>），目标框架 <code>net10.0</code>，程序集名为 <code>sm</code>，依赖 <code>System.IO.Hashing 9.0.0</code>。</p>
+
+<h3>前置条件</h3>
+<ul>
+  <li>.NET SDK 10.0 或更高版本（开发环境使用 <code>10.0.302</code>）。</li>
+</ul>
+
+<h3>构建</h3>
+<pre><code># 在项目根目录
+dotnet build
+
+# 运行（通过 SDK）
+dotnet run -- status
+
+# 发布单文件可执行程序（win-x64）
+dotnet publish -c Release</code></pre>
+
+<p>构建产物默认位于 <code>bin/Debug/net10.0/win-x64/sm.exe</code>。项目已配置 <code>PublishSingleFile=true</code>、<code>SelfContained=false</code>、<code>RuntimeIdentifier=win-x64</code>。</p>
+
+<h3>验证安装</h3>
+<pre><code>sm version
+# sm version 1.0.0
+
+sm --help</code></pre>
+
+<div class="tip"><b>提示：</b>任意命令都可使用 <code>--help</code> 查看该命令的用法，例如 <code>sm log --help</code>。</div>
+
+<!-- ============================ QUICKSTART ============================ -->
+<h2 id="quickstart">快速开始 <a class="anchor" href="#quickstart">#</a></h2>
+<p>下面演示一个完整的最小工作流：初始化、暂存、提交、查看历史、创建分支、合并。</p>
+
+<pre><code># 1. 初始化一个新的仓库（默认分支 main）
+sm init myproject
+cd myproject
+
+# 2. 创建内容并暂存
+echo "hello" &gt; README.md
+sm add README.md
+
+# 3. 查看状态（可加 --short 或 --json）
+sm status
+sm status --short
+
+# 4. 提交
+sm commit -m "first commit"
+
+# 5. 查看历史
+sm log --oneline --graph
+
+# 6. 创建并切换到功能分支
+sm switch -c feature/login
+
+# 7. 在分支上修改并提交
+echo "login" &gt; login.txt
+sm add login.txt
+sm commit -m "add login"
+
+# 8. 切回主分支并合并
+sm switch main
+sm merge feature/login
+
+# 9. 查看提交图与引用
+sm log --oneline --decorate --all</code></pre>
+
+<h3>与远程协作</h3>
+<pre><code># 添加远程（自有协议 sm://；兼容 file://、http(s)://、ssh://）
+sm remote add origin sm://host:9418/
+
+# 携带令牌：sm://token@host:9418/
+
+# 首次推送并设置上游
+sm push -u origin main
+
+# 之后拉取更新
+sm pull origin main</code></pre>
+
+<div class="note"><b>说明：</b>默认承载是自有 <code>sm://</code> 协议。兼容承载仍需以 <code>file://</code>、<code>http://</code>、<code>https://</code> 或 <code>ssh://</code> 开头。scp 风格 <code>user@host:path</code> 不被支持。</div>
+
+<!-- ============================ CONCEPTS ============================ -->
+<h2 id="concepts">核心概念 <a class="anchor" href="#concepts">#</a></h2>
+
+<h3>三棵树：工作树、索引、HEAD</h3>
+<table>
+<thead><tr><th>区域</th><th>含义</th><th>相关命令</th></tr></thead>
+<tbody>
+<tr><td>工作树 (working tree)</td><td>你实际编辑的文件目录。</td><td><code>add</code>、<code>status</code>、<code>restore</code>、<code>checkout</code></td></tr>
+<tr><td>索引 (index / 暂存区)</td><td>下一次提交将要记录的快照，存放于 <code>.sm/index</code>。</td><td><code>add</code>、<code>rm</code>、<code>reset</code>、<code>ls-files</code></td></tr>
+<tr><td>HEAD</td><td>当前检出的提交；通常通过符号引用指向某个分支。</td><td><code>checkout</code>、<code>switch</code>、<code>reset</code>、<code>rev-parse</code></td></tr>
+</tbody>
+</table>
+
+<h3>对象模型</h3>
+<p>仓库中的所有内容都保存为四类对象，以 SHA-256 摘要作为唯一标识（64 位十六进制字符串）：</p>
+<table>
+<thead><tr><th>类型</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>blob</code></td><td>文件内容（原始字节，不做行尾转换）。</td></tr>
+<tr><td><code>tree</code></td><td>目录：以名字字典序排列的条目（模式、名字、子对象 ID）。</td></tr>
+<tr><td><code>commit</code></td><td>快照：指向一个 tree、零或多父提交、作者/提交者签名与消息。</td></tr>
+<tr><td><code>tag</code></td><td>附注标签：指向某对象、类型、标签名、打标签者与消息。</td></tr>
+</tbody>
+</table>
+
+<h3>引用 (refs)</h3>
+<ul>
+  <li><b>HEAD</b>：<code>ref: refs/heads/&lt;branch&gt;</code> 表示在分支上；直接是 64 位哈希表示“分离 HEAD”。</li>
+  <li><b>分支</b>：<code>refs/heads/&lt;name&gt;</code>，内容为一个提交哈希。</li>
+  <li><b>标签</b>：<code>refs/tags/&lt;name&gt;</code>，轻量标签直接指向提交，附注标签指向 tag 对象。</li>
+  <li><b>远程跟踪分支</b>：<code>refs/remotes/&lt;remote&gt;/&lt;branch&gt;</code>。</li>
+  <li><b>reflog</b>：<code>logs/</code> 下按引用路径记录引用移动历史，用于恢复与 <code>HEAD@{n}</code> 语法。</li>
+</ul>
+
+<h3>冲突与合并状态</h3>
+<p>合并、变基、拣选、回退等操作会写入状态文件（如 <code>.sm/MERGE_HEAD</code>、<code>.sm/CHERRY_PICK_HEAD</code>、<code>.sm/CONFLICTS</code>）。发生冲突时对应命令返回非零退出码，工作树中写入冲突标记，需解决后重新 <code>add</code> 并提交（或使用 <code>--continue</code> / <code>--abort</code>）。</p>
+
+<!-- ============================ COMMANDS ============================ -->
+<h2 id="commands">命令参考 <a class="anchor" href="#commands">#</a></h2>
+<p>以下为全部命令。每个命令都支持 <code>--help</code>。带 <span class="badge core">常用</span> 的命令是最常用的；带 <span class="badge plumb">管道</span> 的命令面向脚本；带 <span class="badge json">JSON</span> 的命令支持 <code>--json</code>；带 <span class="badge net">远程</span> 的命令涉及网络传输。</p>
+
+<div class="note"><b>全局选项：</b><code>--json</code> 与 <code>--format &lt;fmt&gt;</code> 声明在命令注册之前，因此可被所有子命令继承，需<b>写在命令名之后</b>（例如 <code>sm status --json</code>）。其余全局选项（<code>--version</code>、<code>--no-pager</code>、<code>--work-tree</code>、<code>--sm-dir</code>、<code>--bare</code>、<code>--paginate</code> 等）声明在命令注册之后，只在其位于命令名之前时才被识别。</div>
+
+<h3>别名</h3>
+<table>
+<thead><tr><th>别名</th><th>完整命令</th></tr></thead>
+<tbody>
+<tr><td><code>co</code></td><td><code>checkout</code></td></tr>
+<tr><td><code>ci</code></td><td><code>commit</code></td></tr>
+<tr><td><code>st</code></td><td><code>status</code></td></tr>
+<tr><td><code>br</code></td><td><code>branch</code></td></tr>
+<tr><td><code>cp</code></td><td><code>cherry-pick</code></td></tr>
+<tr><td><code>rb</code></td><td><code>rebase</code></td></tr>
+</tbody>
+</table>
+
+<h3>仓库初始化</h3>
+
+<article class="cmd" id="cmd-init" data-name="init" data-tags="初始化 仓库 bare">
+  <div class="cmd-h"><h3>init <span class="badge core">常用</span></h3><span class="sig">sm init [&lt;path&gt;] [options]</span></div>
+  <p class="desc">初始化一个新的 SourceManager 仓库。非裸仓库会创建 <code>&lt;path&gt;/.sm</code> 目录。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--bare</code></td><td><code>-B</code></td><td>Bool</td><td>创建裸仓库（无工作树，元数据直接位于 path）。</td></tr>
+  <tr><td><code>--branch</code></td><td><code>-b</code></td><td>String</td><td>初始分支名，默认 <code>main</code>。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>暂存与提交</h3>
+
+<article class="cmd" id="cmd-add" data-name="add" data-tags="暂存 stage index">
+  <div class="cmd-h"><h3>add <span class="badge core">常用</span></h3><span class="sig">sm add [options] &lt;pathspec&gt;…</span></div>
+  <p class="desc">将文件内容添加到索引（暂存区）。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--all</code></td><td><code>-A</code></td><td>Bool</td><td>暂存所有改动（已跟踪与未跟踪）。</td></tr>
+  <tr><td><code>--update</code></td><td><code>-u</code></td><td>Bool</td><td>仅暂存已跟踪文件。</td></tr>
+  <tr><td><code>--patch</code></td><td><code>-p</code></td><td>Bool</td><td>交互式逐块暂存。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>允许添加被忽略的文件。</td></tr>
+  <tr><td><code>--dry-run</code></td><td><code>-n</code></td><td>Bool</td><td>只显示不实际执行。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>输出详细信息。</td></tr>
+  <tr><td><code>--intent-to-add</code></td><td><code>-N</code></td><td>Bool</td><td>仅记录“稍后添加”的意图。</td></tr>
+  <tr><td><code>--refresh</code></td><td></td><td>Bool</td><td>只刷新索引，不添加内容。</td></tr>
+  <tr><td><code>--ignore-errors</code></td><td></td><td>Bool</td><td>忽略错误继续。</td></tr>
+  <tr><td><code>--renormalize</code></td><td></td><td>Bool</td><td>重新应用 smattributes。</td></tr>
+  <tr><td><code>--chmod</code></td><td></td><td>String</td><td>覆盖可执行位。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-commit" data-name="commit" data-tags="提交 amend">
+  <div class="cmd-h"><h3>commit <span class="badge core">常用</span> <span class="badge json">JSON? 否</span></h3><span class="sig">sm commit [options] [--] &lt;pathspec&gt;…</span></div>
+  <p class="desc">把索引中的内容记录为一个新的提交。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--message</code></td><td><code>-m</code></td><td>String</td><td>提交消息。</td></tr>
+  <tr><td><code>--all</code></td><td><code>-a</code></td><td>Bool</td><td>提交前先暂存所有已修改文件。</td></tr>
+  <tr><td><code>--amend</code></td><td></td><td>Bool</td><td>修订上一个提交。</td></tr>
+  <tr><td><code>--no-edit</code></td><td></td><td>Bool</td><td>沿用上一条提交消息。</td></tr>
+  <tr><td><code>--allow-empty</code></td><td></td><td>Bool</td><td>允许空提交。</td></tr>
+  <tr><td><code>--allow-empty-message</code></td><td></td><td>Bool</td><td>允许空提交消息。</td></tr>
+  <tr><td><code>--no-verify</code></td><td><code>-n</code></td><td>Bool</td><td>绕过 pre-commit 钩子。</td></tr>
+  <tr><td><code>--signoff</code></td><td><code>-s</code></td><td>Bool</td><td>添加 Signed-off-by 尾注。</td></tr>
+  <tr><td><code>--no-signoff</code></td><td></td><td>Bool</td><td>不添加 Signed-off-by。</td></tr>
+  <tr><td><code>--date</code></td><td></td><td>String</td><td>覆盖作者日期。</td></tr>
+  <tr><td><code>--author</code></td><td></td><td>String</td><td>覆盖作者。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>在编辑器中显示 diff。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>抑制摘要输出。</td></tr>
+  <tr><td><code>--only</code></td><td><code>-o</code></td><td>Bool</td><td>仅提交指定文件。</td></tr>
+  <tr><td><code>--include</code></td><td><code>-i</code></td><td>Bool</td><td>包含指定文件。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-status" data-name="status" data-tags="状态 short porcelain">
+  <div class="cmd-h"><h3>status <span class="badge core">常用</span> <span class="badge json">JSON</span></h3><span class="sig">sm status [options]</span></div>
+  <p class="desc">显示工作树状态：已暂存、未暂存、未跟踪与冲突文件。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--short</code></td><td><code>-s</code></td><td>Bool</td><td>短格式输出。</td></tr>
+  <tr><td><code>--branch</code></td><td><code>-b</code></td><td>Bool</td><td>显示分支信息。</td></tr>
+  <tr><td><code>--porcelain</code></td><td></td><td>Bool</td><td>机器可读格式 v1。</td></tr>
+  <tr><td><code>--porcelain-v2</code></td><td></td><td>Bool</td><td>机器可读格式 v2。</td></tr>
+  <tr><td><code>--long</code></td><td></td><td>Bool</td><td>长格式（默认）。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  <tr><td><code>--untracked-files</code></td><td><code>-u</code></td><td>String</td><td>未跟踪文件模式，默认 <code>normal</code>。</td></tr>
+  <tr><td><code>--ignore-submodules</code></td><td></td><td>String</td><td>忽略子模块，默认 <code>all</code>。</td></tr>
+  <tr><td><code>--ignored</code></td><td></td><td>Bool</td><td>同时显示被忽略文件。</td></tr>
+  <tr><td><code>--column</code></td><td></td><td>String</td><td>按列显示。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>历史查看与比较</h3>
+
+<article class="cmd" id="cmd-log" data-name="log" data-tags="历史 graph oneline format">
+  <div class="cmd-h"><h3>log <span class="badge core">常用</span> <span class="badge json">JSON</span></h3><span class="sig">sm log [options] [&lt;rev&gt;]</span></div>
+  <p class="desc">显示提交日志。支持过滤器、图形化输出与自定义 <code>--format</code> 格式串。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--max-count</code></td><td><code>-n</code></td><td>Int</td><td>限制提交数量。</td></tr>
+  <tr><td><code>--skip</code></td><td></td><td>Int</td><td>跳过前 N 条。</td></tr>
+  <tr><td><code>--oneline</code></td><td></td><td>Bool</td><td>每条提交一行。</td></tr>
+  <tr><td><code>--graph</code></td><td></td><td>Bool</td><td>显示提交图。</td></tr>
+  <tr><td><code>--decorate</code></td><td></td><td>String</td><td>显示引用名，默认 <code>auto</code>。</td></tr>
+  <tr><td><code>--all</code></td><td></td><td>Bool</td><td>显示所有分支。</td></tr>
+  <tr><td><code>--branches</code></td><td></td><td>String</td><td>显示指定分支。</td></tr>
+  <tr><td><code>--remotes</code></td><td></td><td>String</td><td>显示远程跟踪分支。</td></tr>
+  <tr><td><code>--tags</code></td><td></td><td>Bool</td><td>显示标签。</td></tr>
+  <tr><td><code>--diff-filter</code></td><td></td><td>String</td><td>过滤 diff 输出。</td></tr>
+  <tr><td><code>--author</code></td><td></td><td>String</td><td>按作者过滤。</td></tr>
+  <tr><td><code>--committer</code></td><td></td><td>String</td><td>按提交者过滤。</td></tr>
+  <tr><td><code>--grep</code></td><td></td><td>String</td><td>按消息模式过滤。</td></tr>
+  <tr><td><code>--since</code> / <code>--until</code></td><td></td><td>String</td><td>按日期区间过滤（见<a href="#dates">日期格式</a>）。</td></tr>
+  <tr><td><code>--first-parent</code></td><td></td><td>Bool</td><td>只跟随第一父提交。</td></tr>
+  <tr><td><code>--no-merges</code> / <code>--merges</code></td><td></td><td>Bool</td><td>排除 / 仅显示合并提交。</td></tr>
+  <tr><td><code>--follow</code></td><td></td><td>Bool</td><td>跨重命名跟踪文件历史。</td></tr>
+  <tr><td><code>--reverse</code></td><td></td><td>Bool</td><td>反向顺序。</td></tr>
+  <tr><td><code>--patch</code></td><td><code>-p</code></td><td>Bool</td><td>显示补丁。</td></tr>
+  <tr><td><code>--stat</code> / <code>--shortstat</code></td><td></td><td>Bool</td><td>显示改动统计。</td></tr>
+  </tbody></table></div>
+  <p>配合全局 <code>--format</code> 可自定义输出：支持 <code>%H</code>（完整哈希）、<code>%h</code>（短哈希）、<code>%s</code>（主题）、<code>%an</code>/<code>%ae</code>（作者名/邮箱）、<code>%cn</code>/<code>%ce</code>（提交者名/邮箱）、<code>%d</code>（引用装饰）以及 <code>\n</code>、<code>\t</code>。</p>
+</article>
+
+<article class="cmd" id="cmd-diff" data-name="diff" data-tags="差异 patch cached">
+  <div class="cmd-h"><h3>diff <span class="badge core">常用</span> <span class="badge json">JSON</span></h3><span class="sig">sm diff [options] [&lt;rev&gt; [&lt;rev&gt;]]</span></div>
+  <p class="desc">显示提交之间、索引与工作树之间的差异。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--cached</code> / <code>--staged</code></td><td></td><td>Bool</td><td>显示已暂存的改动。</td></tr>
+  <tr><td><code>--name-only</code></td><td></td><td>Bool</td><td>只显示文件名。</td></tr>
+  <tr><td><code>--name-status</code></td><td></td><td>Bool</td><td>显示文件名与状态。</td></tr>
+  <tr><td><code>--stat</code> / <code>--shortstat</code></td><td></td><td>Bool</td><td>显示改动统计。</td></tr>
+  <tr><td><code>--patch</code> / <code>--no-patch</code></td><td><code>-p</code>/<code>-s</code></td><td>Bool</td><td>生成 / 抑制补丁。</td></tr>
+  <tr><td><code>--raw</code></td><td></td><td>Bool</td><td>原始格式。</td></tr>
+  <tr><td><code>--word-diff</code> / <code>--color-words</code></td><td></td><td>String</td><td>按词比较。</td></tr>
+  <tr><td><code>--no-index</code></td><td></td><td>Bool</td><td>比较文件系统上的两个路径。</td></tr>
+  <tr><td><code>--binary</code></td><td></td><td>Bool</td><td>显示二进制差异。</td></tr>
+  <tr><td><code>--text</code></td><td><code>-a</code></td><td>Bool</td><td>将所有文件视为文本。</td></tr>
+  <tr><td><code>--ignore-space-change</code></td><td><code>-b</code></td><td>Bool</td><td>忽略空白变化。</td></tr>
+  <tr><td><code>--ignore-all-space</code></td><td><code>-w</code></td><td>Bool</td><td>忽略所有空白。</td></tr>
+  <tr><td><code>--ignore-blank-lines</code></td><td></td><td>Bool</td><td>忽略空行。</td></tr>
+  <tr><td><code>--unified</code></td><td><code>-U</code></td><td>Int</td><td>上下文行数，默认 <code>3</code>。</td></tr>
+  <tr><td><code>--minimal</code></td><td></td><td>Bool</td><td>更小差异（更耗时）。</td></tr>
+  <tr><td><code>--patience</code> / <code>--histogram</code></td><td></td><td>Bool</td><td>选择差异算法。</td></tr>
+  <tr><td><code>--diff-algorithm</code></td><td></td><td>String</td><td>指定算法。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-show" data-name="show" data-tags="显示 提交 树 blob">
+  <div class="cmd-h"><h3>show <span class="badge json">JSON</span></h3><span class="sig">sm show [options] &lt;object&gt;</span></div>
+  <p class="desc">显示提交、标签、tree 或 blob。也支持 <code>&lt;rev&gt;:&lt;path&gt;</code> 形式读取树中的文件。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--stat</code></td><td></td><td>Bool</td><td>显示改动统计而非补丁。</td></tr>
+  <tr><td><code>--name-only</code></td><td></td><td>Bool</td><td>只显示变更文件名。</td></tr>
+  <tr><td><code>--name-status</code></td><td></td><td>Bool</td><td>显示文件名与状态。</td></tr>
+  <tr><td><code>--patch</code></td><td><code>-p</code></td><td>Bool</td><td>显示补丁（默认）。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-blame" data-name="blame" data-tags="责任 行 author">
+  <div class="cmd-h"><h3>blame</h3><span class="sig">sm blame [options] &lt;file&gt;</span></div>
+  <p class="desc">显示文件中每一行的来源提交与作者。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--line-porcelain</code></td><td></td><td>Bool</td><td>机器可读的逐行输出。</td></tr>
+  <tr><td><code>--incremental</code></td><td></td><td>Bool</td><td>增量输出。</td></tr>
+  <tr><td><code>--show-email</code></td><td><code>-e</code></td><td>Bool</td><td>显示作者邮箱。</td></tr>
+  <tr><td><code>--show-name</code></td><td><code>-f</code></td><td>Bool</td><td>来源中显示文件名。</td></tr>
+  <tr><td><code>--show-number</code></td><td><code>-n</code></td><td>Bool</td><td>来源中显示行号。</td></tr>
+  <tr><td><code>--abbrev</code></td><td><code>-L</code></td><td>String</td><td>起始/结束行范围。</td></tr>
+  <tr><td><code>--reverse</code></td><td></td><td>Bool</td><td>反向历史。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-shortlog" data-name="shortlog" data-tags="作者 汇总">
+  <div class="cmd-h"><h3>shortlog <span class="badge json">JSON</span></h3><span class="sig">sm shortlog [options]</span></div>
+  <p class="desc">按作者汇总历史。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--numbered</code></td><td><code>-n</code></td><td>Bool</td><td>在作者前显示提交数。</td></tr>
+  <tr><td><code>--summary</code></td><td><code>-s</code></td><td>Bool</td><td>不显示提交主题。</td></tr>
+  <tr><td><code>--since</code></td><td></td><td>String</td><td>仅统计此日期之后的提交。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-describe" data-name="describe" data-tags="标签 最近 tag">
+  <div class="cmd-h"><h3>describe <span class="badge json">JSON</span></h3><span class="sig">sm describe [options] &lt;rev&gt;</span></div>
+  <p class="desc">用最近的标签命名一个提交。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--tags</code></td><td></td><td>Bool</td><td>只以标签为候选。</td></tr>
+  <tr><td><code>--always</code></td><td></td><td>Bool</td><td>无匹配标签时回退到短哈希。</td></tr>
+  <tr><td><code>--abbrev</code></td><td></td><td>Int</td><td>缩写长度，默认 <code>7</code>（范围 4–64）。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>分支、标签与检出</h3>
+
+<article class="cmd" id="cmd-branch" data-name="branch" data-tags="分支 list delete">
+  <div class="cmd-h"><h3>branch <span class="badge core">常用</span></h3><span class="sig">sm branch [options] [&lt;name&gt; [&lt;start&gt;]]</span></div>
+  <p class="desc">列出、创建、重命名或删除分支。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--list</code></td><td><code>-l</code></td><td>Bool</td><td>列出分支。</td></tr>
+  <tr><td><code>--all</code></td><td><code>-a</code></td><td>Bool</td><td>列出本地与远程分支。</td></tr>
+  <tr><td><code>--remote</code></td><td><code>-r</code></td><td>Bool</td><td>列出远程跟踪分支。</td></tr>
+  <tr><td><code>--delete</code> / <code>--force</code></td><td><code>-d</code>/<code>-D</code></td><td>Bool</td><td>删除 / 强制删除分支。</td></tr>
+  <tr><td><code>--move</code></td><td><code>-m</code></td><td>String</td><td>重命名分支并迁移 reflog。</td></tr>
+  <tr><td><code>--copy</code></td><td><code>-c</code></td><td>String</td><td>复制分支。</td></tr>
+  <tr><td><code>--set-upstream-to</code></td><td><code>-u</code></td><td>String</td><td>设置上游跟踪。</td></tr>
+  <tr><td><code>--unset-upstream</code></td><td></td><td>Bool</td><td>取消上游跟踪。</td></tr>
+  <tr><td><code>--merged</code> / <code>--no-merged</code></td><td></td><td>String</td><td>显示已合并 / 未合并到 HEAD 的分支。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>显示 SHA 与提交主题。</td></tr>
+  <tr><td><code>--sort</code></td><td></td><td>String</td><td>排序方式。</td></tr>
+  <tr><td><code>--color</code></td><td></td><td>String</td><td>颜色输出，默认 <code>auto</code>。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-checkout" data-name="checkout co" data-tags="检出 切换 switch">
+  <div class="cmd-h"><h3>checkout <span class="badge core">常用</span></h3><span class="sig">sm checkout [options] &lt;branch|commit&gt; [-- &lt;paths&gt;]</span></div>
+  <p class="desc">切换分支或恢复工作树文件。别名 <code>co</code>。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--branch</code></td><td><code>-b</code></td><td>String</td><td>创建并检出新的分支。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>强制检出。</td></tr>
+  <tr><td><code>--merge</code></td><td><code>-m</code></td><td>Bool</td><td>与目标分支做三方合并。</td></tr>
+  <tr><td><code>--ours</code> / <code>--theirs</code></td><td></td><td>Bool</td><td>检出时的合并策略。</td></tr>
+  <tr><td><code>--orphan</code></td><td></td><td>String</td><td>创建孤立分支。</td></tr>
+  <tr><td><code>--detach</code></td><td></td><td>Bool</td><td>在指定提交处分离 HEAD。</td></tr>
+  <tr><td><code>--track</code> / <code>--no-track</code></td><td><code>-t</code></td><td>Bool</td><td>设置 / 不设置上游跟踪。</td></tr>
+  <tr><td><code>--recurse-submodules</code></td><td></td><td>String</td><td>递归子模块。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-switch" data-name="switch" data-tags="切换 分支 restore">
+  <div class="cmd-h"><h3>switch</h3><span class="sig">sm switch [options] &lt;branch&gt;</span></div>
+  <p class="desc">切换分支（不恢复文件）。若要恢复文件请使用 <code>sm restore</code>。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--branch</code></td><td><code>-c</code></td><td>String</td><td>创建并切换到新分支。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>即使有本地改动也切换。</td></tr>
+  <tr><td><code>--detach</code></td><td><code>-d</code></td><td>Bool</td><td>在指定提交处分离 HEAD。</td></tr>
+  <tr><td><code>--orphan</code></td><td></td><td>String</td><td>创建孤立分支。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-restore" data-name="restore" data-tags="恢复 撤销 checkout">
+  <div class="cmd-h"><h3>restore</h3><span class="sig">sm restore [options] &lt;pathspec&gt;…</span></div>
+  <p class="desc">恢复工作树文件或索引条目。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--staged</code></td><td><code>-S</code></td><td>Bool</td><td>恢复索引而非工作树。</td></tr>
+  <tr><td><code>--worktree</code></td><td><code>-W</code></td><td>Bool</td><td>恢复工作树。</td></tr>
+  <tr><td><code>--source</code></td><td><code>-s</code></td><td>String</td><td>从该修订恢复。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-tag" data-name="tag" data-tags="标签 annotate delete list">
+  <div class="cmd-h"><h3>tag <span class="badge json">JSON（列表模式）</span></h3><span class="sig">sm tag [options] [&lt;name&gt; [&lt;rev&gt;]]</span></div>
+  <p class="desc">创建、列出或删除标签。<code>--list</code> 或未提供标签名时进入列表模式。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--list</code></td><td><code>-l</code></td><td>Bool</td><td>列出标签。</td></tr>
+  <tr><td><code>--delete</code></td><td><code>-d</code></td><td>Bool</td><td>删除标签。</td></tr>
+  <tr><td><code>--annotate</code></td><td><code>-a</code></td><td>Bool</td><td>创建附注标签。</td></tr>
+  <tr><td><code>--sign</code></td><td><code>-s</code></td><td>Bool</td><td>创建签名标签。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>强制创建/删除。</td></tr>
+  <tr><td><code>--message</code></td><td><code>-m</code></td><td>String</td><td>标签消息。</td></tr>
+  <tr><td><code>--sort</code></td><td></td><td>String</td><td>排序：<code>refname</code>、<code>creatordate</code>、<code>version:refname</code>（前缀 <code>-</code> 反序）。</td></tr>
+  <tr><td><code>--lines</code></td><td><code>-n</code></td><td>Int</td><td>每个标签显示的注释行数。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>合并、变基与历史改写</h3>
+
+<article class="cmd" id="cmd-merge" data-name="merge" data-tags="合并 ff squash abort">
+  <div class="cmd-h"><h3>merge <span class="badge core">常用</span></h3><span class="sig">sm merge [options] &lt;branch&gt;</span></div>
+  <p class="desc">连接两条或多条开发历史。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--strategy</code></td><td><code>-s</code></td><td>String</td><td>合并策略。</td></tr>
+  <tr><td><code>--no-ff</code></td><td></td><td>Bool</td><td>即使可快进也创建合并提交。</td></tr>
+  <tr><td><code>--ff-only</code></td><td></td><td>Bool</td><td>仅允许快进。</td></tr>
+  <tr><td><code>--ff</code></td><td></td><td>Bool</td><td>允许快进。</td></tr>
+  <tr><td><code>--squash</code></td><td></td><td>Bool</td><td>压缩为单个提交。</td></tr>
+  <tr><td><code>--no-commit</code></td><td></td><td>Bool</td><td>不自动提交。</td></tr>
+  <tr><td><code>--abort</code> / <code>--continue</code></td><td></td><td>Bool</td><td>中止 / 继续合并。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  <tr><td><code>--message</code></td><td><code>-m</code></td><td>String</td><td>合并提交消息。</td></tr>
+  <tr><td><code>--no-verify</code></td><td><code>-n</code></td><td>Bool</td><td>跳过 pre-merge 钩子。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-rebase" data-name="rebase rb" data-tags="变基 interactive autosquash">
+  <div class="cmd-h"><h3>rebase</h3><span class="sig">sm rebase [options] [&lt;upstream&gt;]</span></div>
+  <p class="desc">在另一个基底上重新应用提交。别名 <code>rb</code>。交互模式通过 <code>EDITOR</code>/<code>SM_EDITOR</code> 编辑变基计划。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--onto</code></td><td></td><td>String</td><td>变基到指定基底。</td></tr>
+  <tr><td><code>--interactive</code></td><td><code>-i</code></td><td>Bool</td><td>交互式变基。</td></tr>
+  <tr><td><code>--continue</code> / <code>--abort</code> / <code>--skip</code> / <code>--quit</code></td><td></td><td>Bool</td><td>变基会话控制。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>强制变基。</td></tr>
+  <tr><td><code>--preserve-merges</code></td><td><code>-p</code></td><td>Bool</td><td>保留合并提交。</td></tr>
+  <tr><td><code>--rebase-merges</code></td><td><code>-r</code></td><td>Bool</td><td>重建合并提交。</td></tr>
+  <tr><td><code>--strategy</code></td><td><code>-s</code></td><td>String</td><td>合并策略。</td></tr>
+  <tr><td><code>--autosquash</code></td><td></td><td>Bool</td><td>自动压缩 fixup 提交。</td></tr>
+  <tr><td><code>--autostash</code> / <code>--no-autostash</code></td><td></td><td>Bool</td><td>变基前自动贮藏。</td></tr>
+  <tr><td><code>--root</code></td><td></td><td>Bool</td><td>变基所有可达提交。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-cherry-pick" data-name="cherry-pick cp" data-tags="拣选 应用">
+  <div class="cmd-h"><h3>cherry-pick</h3><span class="sig">sm cherry-pick [options] &lt;commit&gt;…</span></div>
+  <p class="desc">应用现有提交的改动。别名 <code>cp</code>。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--no-commit</code></td><td><code>-n</code></td><td>Bool</td><td>不自动提交。</td></tr>
+  <tr><td><code>--edit</code></td><td><code>-e</code></td><td>Bool</td><td>编辑提交消息。</td></tr>
+  <tr><td><code>--signoff</code></td><td><code>-s</code></td><td>Bool</td><td>添加 Signed-off-by。</td></tr>
+  <tr><td><code>--mainline</code></td><td><code>-m</code></td><td>Int</td><td>主线父编号。</td></tr>
+  <tr><td><code>--continue</code> / <code>--abort</code> / <code>--quit</code></td><td></td><td>Bool</td><td>会话控制。</td></tr>
+  <tr><td><code>--strategy</code></td><td><code>-X</code></td><td>String</td><td>合并策略选项。</td></tr>
+  <tr><td><code>--allow-empty</code> / <code>--allow-empty-message</code></td><td></td><td>Bool</td><td>允许空提交 / 空消息。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-revert" data-name="revert" data-tags="回退 撤销">
+  <div class="cmd-h"><h3>revert</h3><span class="sig">sm revert [options] &lt;commit&gt;…</span></div>
+  <p class="desc">回退已有的提交（生成一个反向的提交）。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--no-commit</code></td><td><code>-n</code></td><td>Bool</td><td>不自动提交。</td></tr>
+  <tr><td><code>--no-edit</code></td><td></td><td>Bool</td><td>不编辑提交消息。</td></tr>
+  <tr><td><code>--signoff</code></td><td><code>-s</code></td><td>Bool</td><td>添加 Signed-off-by。</td></tr>
+  <tr><td><code>--mainline</code></td><td><code>-m</code></td><td>Int</td><td>主线父编号。</td></tr>
+  <tr><td><code>--continue</code> / <code>--abort</code> / <code>--quit</code></td><td></td><td>Bool</td><td>会话控制。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-reset" data-name="reset" data-tags="重置 soft hard mixed">
+  <div class="cmd-h"><h3>reset</h3><span class="sig">sm reset [options] [&lt;commit&gt;]</span></div>
+  <p class="desc">将当前 HEAD 重置到指定状态。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--soft</code></td><td></td><td>Bool</td><td>保留索引与工作树。</td></tr>
+  <tr><td><code>--mixed</code></td><td></td><td>Bool</td><td>重置索引，保留工作树（默认）。</td></tr>
+  <tr><td><code>--hard</code></td><td></td><td>Bool</td><td>重置索引与工作树。</td></tr>
+  <tr><td><code>--merge</code></td><td></td><td>Bool</td><td>重置并中止合并。</td></tr>
+  <tr><td><code>--keep</code></td><td></td><td>Bool</td><td>保留本地改动。</td></tr>
+  <tr><td><code>--patch</code></td><td><code>-p</code></td><td>Bool</td><td>交互式重置。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-stash" data-name="stash" data-tags="贮藏 pop apply drop">
+  <div class="cmd-h"><h3>stash</h3><span class="sig">sm stash [options] [&lt;subcommand&gt;]</span></div>
+  <p class="desc">把脏工作目录中的改动贮藏起来。默认动作是 <code>push</code>。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--list</code> / <code>--show</code></td><td></td><td>Bool</td><td>列出 / 显示贮藏。</td></tr>
+  <tr><td><code>--pop</code> / <code>--apply</code> / <code>--drop</code></td><td></td><td>Bool</td><td>弹出（应用并删除）/ 应用 / 删除。</td></tr>
+  <tr><td><code>--branch</code></td><td></td><td>String</td><td>从贮藏创建分支。</td></tr>
+  <tr><td><code>--push</code></td><td></td><td>Bool</td><td>保存贮藏（默认）。</td></tr>
+  <tr><td><code>--keep-index</code></td><td></td><td>Bool</td><td>保留索引改动。</td></tr>
+  <tr><td><code>--include-untracked</code></td><td><code>-u</code></td><td>Bool</td><td>包含未跟踪文件。</td></tr>
+  <tr><td><code>--all</code></td><td><code>-a</code></td><td>Bool</td><td>包含被忽略与未跟踪文件。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  <tr><td><code>--message</code></td><td><code>-m</code></td><td>String</td><td>贮藏消息。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-bisect" data-name="bisect" data-tags="二分 查找 bug">
+  <div class="cmd-h"><h3>bisect</h3><span class="sig">sm bisect [options]</span></div>
+  <p class="desc">二分查找引入缺陷的提交。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--start</code></td><td></td><td>Bool</td><td>开始二分会话。</td></tr>
+  <tr><td><code>--good</code> / <code>--bad</code></td><td></td><td>String</td><td>标记良好 / 有问题的提交。</td></tr>
+  <tr><td><code>--skip</code></td><td></td><td>Bool</td><td>跳过当前提交。</td></tr>
+  <tr><td><code>--reset</code></td><td></td><td>Bool</td><td>重置二分会话。</td></tr>
+  <tr><td><code>--replay</code> / <code>--log</code></td><td></td><td>String/Bool</td><td>重放日志 / 显示日志。</td></tr>
+  <tr><td><code>--run</code></td><td></td><td>String</td><td>运行二分脚本。</td></tr>
+  <tr><td><code>--terms</code></td><td></td><td>String</td><td>自定义二分术语。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>文件操作</h3>
+
+<article class="cmd" id="cmd-mv" data-name="mv" data-tags="移动 重命名">
+  <div class="cmd-h"><h3>mv</h3><span class="sig">sm mv [options] &lt;source&gt; &lt;dest&gt;</span></div>
+  <p class="desc">移动或重命名已跟踪文件并更新索引。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>若目标存在则覆盖。</td></tr>
+  <tr><td><code>--dry-run</code></td><td><code>-n</code></td><td>Bool</td><td>仅显示将要执行的重命名。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>报告每个重命名。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-rm" data-name="rm" data-tags="删除 remove">
+  <div class="cmd-h"><h3>rm</h3><span class="sig">sm rm [options] &lt;pathspec&gt;…</span></div>
+  <p class="desc">从工作树与索引中删除文件。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--cached</code></td><td></td><td>Bool</td><td>仅从索引删除，保留文件。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>即使有暂存或本地改动也删除。</td></tr>
+  <tr><td><code>--recursive</code></td><td><code>-r</code></td><td>Bool</td><td>递归删除目录。</td></tr>
+  <tr><td><code>--dry-run</code></td><td><code>-n</code></td><td>Bool</td><td>仅显示将要删除的内容。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>抑制逐文件输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-clean" data-name="clean" data-tags="清理 未跟踪">
+  <div class="cmd-h"><h3>clean <span class="badge json">JSON</span></h3><span class="sig">sm clean [options]</span></div>
+  <p class="desc">从工作树中删除未跟踪文件。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>实际删除（除非 <code>--dry-run</code>，否则必需）。</td></tr>
+  <tr><td><code>--dry-run</code></td><td><code>-n</code></td><td>Bool</td><td>仅显示将要删除的内容。</td></tr>
+  <tr><td><code>--directories</code></td><td><code>-d</code></td><td>Bool</td><td>同时删除空目录。</td></tr>
+  <tr><td><code>--ignored</code></td><td><code>-x</code></td><td>Bool</td><td>同时删除被忽略文件。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>抑制逐文件输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-archive" data-name="archive" data-tags="导出 zip tar">
+  <div class="cmd-h"><h3>archive</h3><span class="sig">sm archive [options] &lt;rev&gt;</span></div>
+  <p class="desc">把某个 tree 导出为 zip 或 tar 流。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--format</code></td><td></td><td>String</td><td>格式：<code>zip</code> 或 <code>tar</code>，默认 <code>zip</code>。</td></tr>
+  <tr><td><code>--output</code></td><td><code>-o</code></td><td>String</td><td>写入文件而非标准输出。</td></tr>
+  <tr><td><code>--prefix</code></td><td></td><td>String</td><td>归档内的路径前缀。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>远程操作</h3>
+
+<article class="cmd" id="cmd-remote" data-name="remote" data-tags="远程 管理 origin">
+  <div class="cmd-h"><h3>remote <span class="badge net">远程</span></h3><span class="sig">sm remote &lt;subcommand&gt; …</span></div>
+  <p class="desc">管理被跟踪的仓库。使用动词形式（如下）而非选项形式。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>子命令</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>sm remote</code></td><td>列出所有远程名。</td></tr>
+  <tr><td><code>sm remote -v</code></td><td>列出远程并显示 URL 与远程跟踪分支。</td></tr>
+  <tr><td><code>sm remote add &lt;name&gt; &lt;url&gt;</code></td><td>添加远程；写入 <code>remote.&lt;name&gt;.url</code> 与默认 fetch refspec。</td></tr>
+  <tr><td><code>sm remote remove|rm &lt;name&gt;</code></td><td>删除远程及其配置和远程跟踪引用。</td></tr>
+  <tr><td><code>sm remote rename &lt;old&gt; &lt;new&gt;</code></td><td>重命名远程并迁移引用目录。</td></tr>
+  <tr><td><code>sm remote set-url &lt;name&gt; &lt;url&gt;</code></td><td>修改远程 URL。</td></tr>
+  <tr><td><code>sm remote get-url &lt;name&gt;</code></td><td>打印远程 URL。</td></tr>
+  <tr><td><code>sm remote show &lt;name&gt;</code></td><td>显示远程详情与跟踪关系。</td></tr>
+  </tbody></table></div>
+  <div class="note"><b>用法：</b>远程操作使用上表的动词形式（如 <code>sm remote add</code>）。默认 fetch refspec 为 <code>+refs/heads/*:refs/remotes/&lt;name&gt;/*</code>。</div>
+</article>
+
+<article class="cmd" id="cmd-push" data-name="push" data-tags="推送 force delete tags">
+  <div class="cmd-h"><h3>push <span class="badge core">常用</span> <span class="badge net">远程</span></h3><span class="sig">sm push [options] [&lt;remote&gt; [&lt;refspec&gt;]]</span></div>
+  <p class="desc">更新远程引用并上传关联对象。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--all</code></td><td></td><td>Bool</td><td>推送所有分支。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>强制推送（绕过快进检查）。</td></tr>
+  <tr><td><code>--delete</code></td><td><code>-d</code></td><td>Bool</td><td>删除远程引用（单个 refspec）。</td></tr>
+  <tr><td><code>--tags</code> / <code>--follow-tags</code></td><td></td><td>Bool</td><td>同时推送标签。</td></tr>
+  <tr><td><code>--dry-run</code></td><td><code>-n</code></td><td>Bool</td><td>演练，不实际上传。</td></tr>
+  <tr><td><code>--no-verify</code></td><td></td><td>Bool</td><td>绕过 <code>pre-push</code> 钩子。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  </tbody></table></div>
+  <p>非强制推送时，若远程分支已存在且其最新提交不是要推送提交的祖先，则拒绝并提示先 <code>pull</code>。refspec 支持 <code>&lt;local&gt;:&lt;remote&gt;</code>。</p>
+</article>
+
+<article class="cmd" id="cmd-fetch" data-name="fetch" data-tags="抓取 prune tags depth">
+  <div class="cmd-h"><h3>fetch <span class="badge net">远程</span></h3><span class="sig">sm fetch [options] [&lt;remote&gt; [&lt;branch&gt;]]</span></div>
+  <p class="desc">从另一个仓库下载对象与引用。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--all</code></td><td></td><td>Bool</td><td>抓取所有远程。</td></tr>
+  <tr><td><code>--force</code></td><td><code>-f</code></td><td>Bool</td><td>影响状态标签（<code>[forced]</code>）。</td></tr>
+  <tr><td><code>--prune</code></td><td><code>-p</code></td><td>Bool</td><td>删除远程已不存在的跟踪分支。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  </tbody></table></div>
+  <p>提供分支名时只抓取该分支（按精确分支名匹配）。</p>
+</article>
+
+<article class="cmd" id="cmd-pull" data-name="pull" data-tags="拉取 rebase merge squash">
+  <div class="cmd-h"><h3>pull <span class="badge core">常用</span> <span class="badge net">远程</span></h3><span class="sig">sm pull [options] [&lt;remote&gt; [&lt;branch&gt;]]</span></div>
+  <p class="desc">从另一个仓库抓取并整合。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--rebase</code> / <code>--no-rebase</code></td><td><code>-r</code></td><td>Bool</td><td>用变基（而非合并）整合。</td></tr>
+  <tr><td><code>--ff-only</code></td><td></td><td>Bool</td><td>仅允许快进。</td></tr>
+  <tr><td><code>--squash</code></td><td></td><td>Bool</td><td>压缩为一个提交。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  </tbody></table></div>
+  <p>当本地提交是远程提交的祖先时执行快进；否则进行合并（或按选项变基/压缩）。</p>
+</article>
+
+<article class="cmd" id="cmd-serve" data-name="serve" data-tags="服务器 服务 sm:// http ssh stdio 协议">
+  <div class="cmd-h"><h3>serve <span class="badge net">远程</span></h3><span class="sig">sm serve [options]</span></div>
+  <p class="desc">启动 SourceManager 服务器。默认使用自有 <code>sm://</code> 二进制协议；<code>--http</code> / <code>--stdio</code> 启用兼容承载。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--port</code></td><td></td><td>Int</td><td>监听端口，默认 <code>9418</code>。</td></tr>
+  <tr><td><code>--bind</code></td><td></td><td>String</td><td>绑定地址，默认 <code>+</code>（所有接口）。</td></tr>
+  <tr><td><code>--http</code></td><td></td><td>Bool</td><td>改用 HTTP 兼容承载（非默认）。</td></tr>
+  <tr><td><code>--stdio</code></td><td></td><td>Bool</td><td>通过标准输入/输出服务（供 SSH 兼容）。</td></tr>
+  <tr><td><code>--path</code></td><td></td><td>String</td><td>仓库路径；省略时向上查找。</td></tr>
+  </tbody></table></div>
+  <div class="warn"><b>安全提示：</b>原生 <code>sm://</code> 与 HTTP 均为明文、无 TLS。设置环境变量 <code>SM_SERVE_TOKEN</code> 可启用 Bearer Token 认证（在握手帧中校验）；未设置时若绑定到非回环地址会打印安全警告。</div>
+</article>
+
+<h3>检查与维护</h3>
+
+<article class="cmd" id="cmd-config" data-name="config" data-tags="配置 user email">
+  <div class="cmd-h"><h3>config</h3><span class="sig">sm config [options] [&lt;key&gt; [&lt;value&gt;]]</span></div>
+  <p class="desc">读写仓库或全局配置。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--list</code></td><td><code>-l</code></td><td>Bool</td><td>列出所有配置。</td></tr>
+  <tr><td><code>--get</code> / <code>--get-all</code></td><td></td><td>Bool</td><td>读取单个 / 所有匹配值。</td></tr>
+  <tr><td><code>--add</code></td><td></td><td>Bool</td><td>添加配置项。</td></tr>
+  <tr><td><code>--unset</code></td><td></td><td>Bool</td><td>删除配置项。</td></tr>
+  <tr><td><code>--type</code></td><td><code>-t</code></td><td>String</td><td>值类型（<code>bool</code>、<code>int</code>、<code>path</code>）。</td></tr>
+  <tr><td><code>--null</code></td><td><code>-z</code></td><td>Bool</td><td>NUL 分隔输出。</td></tr>
+  </tbody></table></div>
+  <p>配置文件：本地 <code>.sm/config</code>，全局 <code>~/.smconfig</code>。采用 INI 风格，支持 <code>[section]</code> 与 <code>key = value</code>，<code>#</code>/<code>;</code> 为注释。</p>
+</article>
+
+<article class="cmd" id="cmd-fsck" data-name="fsck" data-tags="校验 完整性">
+  <div class="cmd-h"><h3>fsck</h3><span class="sig">sm fsck [options]</span></div>
+  <p class="desc">校验仓库对象的连通性与有效性。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--full</code></td><td></td><td>Bool</td><td>完整检查。</td></tr>
+  <tr><td><code>--strict</code></td><td></td><td>Bool</td><td>严格模式。</td></tr>
+  <tr><td><code>--unreachable</code></td><td></td><td>Bool</td><td>显示不可达对象。</td></tr>
+  <tr><td><code>--dangling</code></td><td></td><td>Bool</td><td>显示悬挂对象。</td></tr>
+  <tr><td><code>--no-reflogs</code></td><td></td><td>Bool</td><td>不考虑 reflog。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-verify" data-name="verify" data-tags="校验 完整性 哈希">
+  <div class="cmd-h"><h3>verify <span class="badge json">JSON</span></h3><span class="sig">sm verify [options]</span></div>
+  <p class="desc">校验仓库完整性（每个对象与其 ID 匹配）。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--unreachable</code></td><td></td><td>Bool</td><td>同时报告不可达对象。</td></tr>
+  <tr><td><code>--full</code></td><td></td><td>Bool</td><td>完整检查，包含可达性。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>只报告问题。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-gc" data-name="gc" data-tags="垃圾回收 优化 prune">
+  <div class="cmd-h"><h3>gc</h3><span class="sig">sm gc [options]</span></div>
+  <p class="desc">清理无用文件并优化仓库。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--auto</code></td><td></td><td>Bool</td><td>自动模式。</td></tr>
+  <tr><td><code>--prune</code></td><td></td><td>String</td><td>清理比此时间更旧的松散对象，默认 <code>2.weeks.ago</code>。</td></tr>
+  <tr><td><code>--no-prune</code></td><td></td><td>Bool</td><td>不清理。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>安静模式。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-reflog" data-name="reflog" data-tags="引用日志 expire">
+  <div class="cmd-h"><h3>reflog</h3><span class="sig">sm reflog [options] [&lt;ref&gt;]</span></div>
+  <p class="desc">管理 reflog 信息。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--expire</code></td><td></td><td>String</td><td>使早于该时间的条目过期。</td></tr>
+  <tr><td><code>--delete</code></td><td></td><td>Bool</td><td>删除条目。</td></tr>
+  <tr><td><code>--all</code></td><td></td><td>Bool</td><td>处理所有引用。</td></tr>
+  <tr><td><code>--verbose</code></td><td><code>-v</code></td><td>Bool</td><td>详细输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<h3>底层（管道）命令</h3>
+
+<article class="cmd" id="cmd-rev-parse" data-name="rev-parse" data-tags="解析 修订 plumbing">
+  <div class="cmd-h"><h3>rev-parse <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm rev-parse [options] &lt;rev&gt;…</span></div>
+  <p class="desc">将修订解析为对象 ID。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--verify</code></td><td></td><td>Bool</td><td>不输出诊断，仅以退出码表示结果。</td></tr>
+  <tr><td><code>--quiet</code></td><td><code>-q</code></td><td>Bool</td><td>抑制错误消息。</td></tr>
+  <tr><td><code>--short</code></td><td></td><td>Int</td><td>将 ID 缩写为 N 个字符。</td></tr>
+  <tr><td><code>--abbrev-ref</code></td><td></td><td>Bool</td><td>显示 HEAD 对应的分支名。</td></tr>
+  <tr><td><code>--show-toplevel</code></td><td></td><td>Bool</td><td>打印工作树根目录。</td></tr>
+  <tr><td><code>--is-inside-work-tree</code></td><td></td><td>Bool</td><td>位于工作树内时打印 true。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-cat-file" data-name="cat-file" data-tags="对象 读取 plumbing">
+  <div class="cmd-h"><h3>cat-file <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm cat-file [options] &lt;object&gt;</span></div>
+  <p class="desc">从对象数据库中读取一个对象。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--type</code></td><td><code>-t</code></td><td>Bool</td><td>打印对象类型。</td></tr>
+  <tr><td><code>--size</code></td><td><code>-s</code></td><td>Bool</td><td>打印对象大小。</td></tr>
+  <tr><td><code>--pretty</code></td><td><code>-p</code></td><td>Bool</td><td>美化打印对象。</td></tr>
+  <tr><td><code>--exists</code></td><td><code>-e</code></td><td>Bool</td><td>对象存在时退出码为 0。</td></tr>
+  <tr><td><code>--batch</code></td><td></td><td>Bool</td><td>从标准输入读取对象名（与 <code>--json</code> 不兼容）。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-hash-object" data-name="hash-object" data-tags="哈希 对象 plumbing">
+  <div class="cmd-h"><h3>hash-object <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm hash-object [options] [&lt;file&gt;…]</span></div>
+  <p class="desc">计算内容的对象 ID。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--write</code></td><td><code>-w</code></td><td>Bool</td><td>同时存储对象。</td></tr>
+  <tr><td><code>--stdin</code></td><td></td><td>Bool</td><td>从标准输入读取内容。</td></tr>
+  <tr><td><code>--type</code></td><td><code>-t</code></td><td>String</td><td>作为该类型进行哈希，默认 <code>blob</code>。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-ls-tree" data-name="ls-tree" data-tags="树 列出 plumbing">
+  <div class="cmd-h"><h3>ls-tree <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm ls-tree [options] &lt;tree&gt;</span></div>
+  <p class="desc">列出一个 tree 对象的内容。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--recursive</code></td><td><code>-r</code></td><td>Bool</td><td>递归进入子树。</td></tr>
+  <tr><td><code>--name-only</code></td><td></td><td>Bool</td><td>只显示名字。</td></tr>
+  <tr><td><code>--null</code></td><td><code>-z</code></td><td>Bool</td><td>NUL 分隔输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-ls-files" data-name="ls-files" data-tags="索引 列出 plumbing">
+  <div class="cmd-h"><h3>ls-files <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm ls-files [options]</span></div>
+  <p class="desc">列出索引中跟踪的文件。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--cached</code></td><td><code>-c</code></td><td>Bool</td><td>显示已缓存（跟踪）文件。</td></tr>
+  <tr><td><code>--modified</code></td><td><code>-m</code></td><td>Bool</td><td>显示未暂存的修改。</td></tr>
+  <tr><td><code>--deleted</code></td><td><code>-d</code></td><td>Bool</td><td>显示已删除文件。</td></tr>
+  <tr><td><code>--others</code></td><td><code>-o</code></td><td>Bool</td><td>显示未跟踪文件。</td></tr>
+  <tr><td><code>--stage</code></td><td><code>-s</code></td><td>Bool</td><td>显示模式、对象 ID 与阶段。</td></tr>
+  <tr><td><code>--null</code></td><td><code>-z</code></td><td>Bool</td><td>NUL 分隔输出。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-merge-base" data-name="merge-base" data-tags="祖先 共同 plumbing">
+  <div class="cmd-h"><h3>merge-base <span class="badge plumb">管道</span> <span class="badge json">JSON</span></h3><span class="sig">sm merge-base [options] &lt;commit&gt; &lt;commit&gt;</span></div>
+  <p class="desc">查找两个提交的共同祖先。</p>
+  <div class="tbl-scroll"><table>
+  <thead><tr><th>选项</th><th>短名</th><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+  <tr><td><code>--is-ancestor</code></td><td></td><td>Bool</td><td>测试祖先关系而非打印基点。</td></tr>
+  <tr><td><code>--all</code></td><td><code>-a</code></td><td>Bool</td><td>显示所有最佳共同祖先。</td></tr>
+  </tbody></table></div>
+</article>
+
+<article class="cmd" id="cmd-help" data-name="help" data-tags="帮助">
+  <div class="cmd-h"><h3>help</h3><span class="sig">sm help [&lt;command&gt;]</span></div>
+  <p class="desc">显示帮助。不带参数显示根帮助，带命令名显示该命令帮助。</p>
+</article>
+
+<article class="cmd" id="cmd-version" data-name="version" data-tags="版本">
+  <div class="cmd-h"><h3>version</h3><span class="sig">sm version</span></div>
+  <p class="desc">显示版本信息（<code>sm version 1.0.0</code>）。也可用全局 <code>--version</code>。</p>
+</article>
+
+<!-- ============================ REVISION ============================ -->
+<h2 id="revision">修订语法 <a class="anchor" href="#revision">#</a></h2>
+<p>所有接受修订参数的命令都使用统一的解析器。语法如下：</p>
+<pre><code>&lt;rev&gt;   := &lt;base&gt; ( '~' [n] | '^' [n] )*
+&lt;base&gt;  := HEAD
+         | HEAD@{&lt;selector&gt;}
+         | &lt;branch&gt;
+         | &lt;tag&gt;
+         | &lt;remote&gt;/&lt;branch&gt;
+         | &lt;4..64 位十六进制前缀&gt;
+&lt;revpath&gt; := &lt;rev&gt; ':' ['/']&lt;path&gt;</code></pre>
+
+<table>
+<thead><tr><th>写法</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><code>HEAD</code></td><td>当前提交。</td></tr>
+<tr><td><code>HEAD~3</code></td><td>沿第一父提交向上 3 代（<code>~</code> 省略数字时为 1）。</td></tr>
+<tr><td><code>HEAD^2</code></td><td>第 2 个父提交（合并提交的第二个父）。<code>^0</code> 表示自身（剥离标签）。</td></tr>
+<tr><td><code>main</code>、<code>v1.0</code>、<code>origin/main</code></td><td>分支、标签、远程跟踪分支（标签会被剥离到其提交）。</td></tr>
+<tr><td><code>1a2b3c4d</code></td><td>对象 ID 前缀（至少 4 位）。</td></tr>
+<tr><td><code>HEAD@{2}</code></td><td>HEAD reflog 中的第 N 条（0 为最近）。</td></tr>
+<tr><td><code>HEAD~2^2</code></td><td>操作符可链式组合。</td></tr>
+<tr><td><code>main:src/app.cs</code></td><td>提交树中路径对应的 blob。</td></tr>
+</tbody>
+</table>
+
+<div class="note"><b>比较两个修订：</b>分别作为参数传入即可，例如 <code>sm diff main feature</code>。</div>
+
+<!-- ============================ DATES ============================ -->
+<h2 id="dates">日期格式 <a class="anchor" href="#dates">#</a></h2>
+<p>供 <code>log --since/--until</code>、<code>shortlog --since</code>、<code>gc --prune</code>、<code>reflog --expire</code> 等使用。</p>
+<table>
+<thead><tr><th>形式</th><th>示例</th></tr></thead>
+<tbody>
+<tr><td>当前时间</td><td><code>now</code></td></tr>
+<tr><td>相对时间</td><td><code>2.weeks.ago</code>、<code>3.days.ago</code>、<code>10.minutes.ago</code>、<code>1.month.ago</code>、<code>1.year.ago</code></td></tr>
+<tr><td>绝对时间</td><td>任何 <code>DateTimeOffset.TryParse</code> 可解析的字符串，如 <code>2026-09-24</code>、<code>2026-09-24T13:05:00+08:00</code></td></tr>
+</tbody>
+</table>
+<p>相对时间的单位：<code>second</code>、<code>minute</code>、<code>hour</code>、<code>day</code>、<code>week</code>、<code>month</code>（按 30 天）、<code>year</code>（按 365 天），可带复数 <code>s</code>。无法解析的值会被当作“无过滤条件”。</p>
+
+<!-- ============================ CONFIG ============================ -->
+<h2 id="config">配置 <a class="anchor" href="#config">#</a></h2>
+<p>配置采用 INI 风格，两个位置：</p>
+<table>
+<thead><tr><th>作用域</th><th>路径</th><th>可写</th></tr></thead>
+<tbody>
+<tr><td>全局</td><td><code>%USERPROFILE%/.smconfig</code>（<code>~/.smconfig</code>）</td><td>否（仅读取）</td></tr>
+<tr><td>本地</td><td><code>&lt;repo&gt;/.sm/config</code></td><td>是（<code>sm config</code> 写入此处）</td></tr>
+</tbody>
+</table>
+<p>加载顺序为先全局后本地，因此本地值覆盖全局值。没有系统级配置。</p>
+
+<h3>常用配置项</h3>
+<table>
+<thead><tr><th>节.键</th><th>说明</th><th>默认</th></tr></thead>
+<tbody>
+<tr><td><code>user.name</code></td><td>提交/标签/reflog 使用的用户名。</td><td>系统用户名</td></tr>
+<tr><td><code>user.email</code></td><td>提交使用的邮箱。</td><td><code>&lt;user&gt;@&lt;machine&gt;.local</code></td></tr>
+<tr><td><code>init.defaultbranch</code></td><td><code>sm init</code> 的默认分支名。</td><td><code>main</code></td></tr>
+<tr><td><code>color.ui</code></td><td>颜色开关：<code>true</code>/<code>false</code> 或 <code>auto</code>/<code>always</code>/<code>never</code>。</td><td><code>auto</code></td></tr>
+<tr><td><code>diff.algorithm</code></td><td>默认差异算法。</td><td><code>myers</code></td></tr>
+<tr><td><code>merge.strategy</code></td><td>默认合并策略。</td><td><code>fastforward</code></td></tr>
+<tr><td><code>remote.&lt;name&gt;.url</code></td><td>远程地址。</td><td>—</td></tr>
+<tr><td><code>remote.&lt;name&gt;.fetch</code></td><td>fetch refspec，默认 <code>+refs/heads/*:refs/remotes/&lt;name&gt;/*</code>。</td><td>添加远程时写入</td></tr>
+<tr><td><code>remote.&lt;name&gt;.pushurl</code></td><td>推送地址（列出时显示，但不会被写入）。</td><td>—</td></tr>
+<tr><td><code>branch.&lt;name&gt;.remote</code></td><td>分支的上游远程。</td><td>—</td></tr>
+<tr><td><code>branch.&lt;name&gt;.merge</code></td><td>上游分支引用，如 <code>refs/heads/main</code>。</td><td>—</td></tr>
+</tbody>
+</table>
+
+<pre><code># 设置身份
+sm config user.name "Ada Lovelace"
+sm config user.email "ada@example.com"
+
+# 列出配置
+sm config --list
+
+# 读取单个值
+sm config --get user.name</code></pre>
+
+<div class="note"><b>提示：</b>建议使用 <code>sm remote</code> 管理远程，它会一并维护 <code>remote.&lt;name&gt;.url</code> 与远程跟踪引用。</div>
+
+<!-- ============================ IGNORE ============================ -->
+<h2 id="ignore">忽略规则 <a class="anchor" href="#ignore">#</a></h2>
+<p>忽略规则按从低到高的优先级加载，靠后者覆盖前者：</p>
+<ol>
+  <li>全局排除文件：环境变量 <code>SM_GLOBAL_EXCLUDES</code> 指定，或默认 <code>~/.sm/ignore</code>；</li>
+  <li><code>&lt;root&gt;/info/exclude</code>；</li>
+  <li><code>&lt;root&gt;/.sm/info/exclude</code>（<code>sm init</code> 会创建，内容为注释行）；</li>
+  <li>仓库根下的 <code>.smignore</code>；</li>
+  <li>各级子目录中的 <code>.smignore</code>（按路径顺序）。</li>
+</ol>
+<p>规则支持 <code>!</code> 取反。目录遍历会自动跳过 <code>.sm</code>、<code>.git</code>、<code>.svn</code>。</p>
+
+<!-- ============================ HOOKS ============================ -->
+<h2 id="hooks">钩子 <a class="anchor" href="#hooks">#</a></h2>
+<p>在 <code>&lt;sm-dir&gt;/hooks/</code> 中放置脚本即可挂接工作流。钩子以工作树为当前目录运行，返回非零退出码可中止对应操作。</p>
+<table>
+<thead><tr><th>钩子</th><th>参数</th><th>触发与语义</th></tr></thead>
+<tbody>
+<tr><td><code>pre-commit</code></td><td>无</td><td>提交前运行；非零退出中止提交（<code>--no-verify</code> 可跳过）。</td></tr>
+<tr><td><code>commit-msg</code></td><td>消息文件路径</td><td>可原地改写提交消息；非零退出中止提交。</td></tr>
+<tr><td><code>post-commit</code></td><td>无</td><td>提交记录后运行；失败只警告。</td></tr>
+<tr><td><code>pre-merge</code></td><td>被合并的分支名</td><td>合并前运行；非零退出中止合并。</td></tr>
+<tr><td><code>post-merge</code></td><td>已合并的分支名</td><td>合并成功后运行；失败只警告。</td></tr>
+<tr><td><code>pre-push</code></td><td>远程名、URL</td><td>推送前运行；非零退出中止推送（<code>--no-verify</code> 可跳过）。</td></tr>
+</tbody>
+</table>
+<p>钩子文件可以是裸名（如 <code>pre-commit</code>），也可带扩展名以选择解释器：<code>.cmd</code>/<code>.bat</code>、<code>.ps1</code>、<code>.sh</code>/<code>.bash</code>、<code>.py</code>、<code>.js</code>、<code>.exe</code>；带 <code>#!</code> shebang 的脚本按其声明的解释器运行。设置 <code>SM_NO_HOOKS=1</code> 可全局禁用钩子。</p>
+
+<!-- ============================ JSON ============================ -->
+<h2 id="json">JSON 输出 <a class="anchor" href="#json">#</a></h2>
+<p>在支持的命令后添加 <code>--json</code>（或 <code>--format json</code>，大小写不敏感）即可获得机器可读输出。成功文档使用固定信封：</p>
+<pre><code>{
+  "sm": 1,
+  "command": "&lt;命令名&gt;",
+  "data": { ... }
+}</code></pre>
+<p>JSON 输出到标准输出，缩进为 2 空格，非 ASCII 字符不转义。时间戳格式为 <code>yyyy-MM-ddTHH:mm:sszzz</code>。</p>
+
+<h3>支持 JSON 的命令（15 个）</h3>
+<p><code>status</code>、<code>log</code>、<code>diff</code>、<code>show</code>、<code>describe</code>、<code>rev-parse</code>、<code>shortlog</code>、<code>clean</code>、<code>cat-file</code>、<code>hash-object</code>、<code>ls-tree</code>、<code>ls-files</code>、<code>merge-base</code>、<code>tag</code>（列表模式）、<code>verify</code>。</p>
+
+<h3>示例：<code>sm status --json</code></h3>
+<pre><code>{
+  "sm": 1,
+  "command": "status",
+  "data": {
+    "branch": "main",
+    "upstream": "origin/main",
+    "ahead": 1,
+    "behind": 0,
+    "detached": false,
+    "clean": false,
+    "staged": [ { "path": "a.txt", "oldPath": null, "status": "added" } ],
+    "unstaged": [],
+    "untracked": [ "b.txt" ],
+    "conflicted": []
+  }
+}</code></pre>
+
+<h3>状态码取值</h3>
+<p>文件状态用字符串表示：<code>added</code>、<code>modified</code>、<code>deleted</code>、<code>renamed</code>、<code>copied</code>、<code>type_changed</code>、<code>unmerged</code>、<code>untracked</code>、<code>ignored</code>。</p>
+
+<div class="note"><b>说明：</b>成功时输出 <code>data</code> 信封；命令失败且请求了 JSON 时输出 <code>error</code> 信封（含 <code>code</code>：<code>usage</code>、<code>unknown-command</code>、<code>error</code> 或 <code>fatal</code>）。同一次运行只输出一个信封，诊断文本仍同时写入标准错误。</div>
+
+<!-- ============================ EXIT ============================ -->
+<h2 id="exit">退出码与输出约定 <a class="anchor" href="#exit">#</a></h2>
+<table>
+<thead><tr><th>退出码</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>成功；也用于 <code>--help</code>、无参数（根帮助）、<code>--version</code>、谓词为真。</td></tr>
+<tr><td><code>1</code></td><td>一般失败、用法错误、命令错误；也是谓词的“假”信号（如 <code>merge-base --is-ancestor</code>、<code>cat-file --exists</code>）。</td></tr>
+<tr><td><code>128</code></td><td>致命错误：<code>Program.Main</code> 中所有未捕获异常，以及 <code>init</code> 的失败。</td></tr>
+</tbody>
+</table>
+
+<h3>输出流约定</h3>
+<ul>
+  <li>成功的数据与散文输出 -> 标准输出（stdout）。</li>
+  <li>诊断信息（<code>error:</code>、<code>fatal:</code>、<code>hint:</code>）-> 标准错误（stderr）。</li>
+  <li><code>warning: …</code> 由 <code>Terminal.WriteWarning</code> 添加前缀并写入标准输出。</li>
+  <li>颜色在标准输出被重定向时自动关闭。</li>
+</ul>
+
+<h3>参数解析规则</h3>
+<ul>
+  <li>长选项支持 <code>--name value</code> 与 <code>--name=value</code>；布尔选项忽略附带的值。</li>
+  <li>短选项可合并（如 <code>-am</code>）；非布尔短选项必须位于合并串末尾并紧跟其值，且值不能直接粘连。</li>
+  <li><code>--</code> 之后的所有参数进入透传列表；<code>restore</code>/<code>switch</code> 之外的命令只读取位置参数。</li>
+  <li>选项名与命令名均大小写不敏感。未知选项会产生 <code>error: Unknown option: --x</code> 并以退出码 1 结束。</li>
+</ul>
+
+<!-- ============================ ENV ============================ -->
+<h2 id="environment">环境变量 <a class="anchor" href="#environment">#</a></h2>
+<table>
+<thead><tr><th>变量</th><th>方向</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>SM_TOKEN</code></td><td>客户端</td><td>全局 Bearer Token（sm:// Hello 帧 / HTTP 头 / SSH hello）。</td></tr>
+<tr><td><code>SM_TOKEN_&lt;REMOTE&gt;</code></td><td>客户端</td><td>按远程名区分的 Token，优先级高于 <code>SM_TOKEN</code>（远程名转大写、<code>-</code> 转 <code>_</code>）。</td></tr>
+<tr><td><code>SM_SERVE_TOKEN</code></td><td>服务端</td><td>服务端要求的 Bearer Token；未设置则不认证。</td></tr>
+<tr><td><code>SM_NO_HOOKS</code></td><td>客户端</td><td>设为 <code>1</code> 时禁用所有仓库钩子的执行。</td></tr>
+<tr><td><code>SM_INSECURE_HOST</code></td><td>客户端</td><td>对该主机禁用 TLS 证书校验（大小写不敏感）。</td></tr>
+<tr><td><code>SM_GLOBAL_EXCLUDES</code></td><td>客户端</td><td>全局忽略文件路径。</td></tr>
+<tr><td><code>SM_EDITOR</code> / <code>EDITOR</code> / <code>VISUAL</code></td><td>客户端</td><td>交互式变基计划使用的编辑器；回退为 Windows <code>notepad.exe</code>，其他平台 <code>vi</code>。</td></tr>
+</tbody>
+</table>
+
+<!-- ============================ LAYOUT ============================ -->
+<h2 id="layout">仓库结构 <a class="anchor" href="#layout">#</a></h2>
+<p>非裸仓库的工作树根下是 <code>.sm</code> 元数据目录；裸仓库的元数据直接位于根目录。由 <code>sm init</code> 创建：</p>
+<pre><code>.sm/
+├── HEAD                 # 符号引用或分离的提交哈希
+├── config               # 本地 INI 配置（首次写入时创建）
+├── index                # 暂存区（首次保存时创建，仅非裸仓库）
+├── description          # 仓库描述文本
+├── objects/             # 松散对象数据库
+│   └── ab/cdef…         #   &lt;前2位&gt;/&lt;后62位&gt;，zlib 压缩
+├── refs/
+│   ├── heads/&lt;branch&gt;   # 本地分支
+│   ├── tags/&lt;tag&gt;       # 标签
+│   └── remotes/&lt;r&gt;/&lt;b&gt; # 远程跟踪分支
+├── logs/                # reflog（logs/HEAD、logs/refs/...）
+├── hooks/               # 钩子脚本（pre-commit/commit-msg/post-commit/pre-merge/post-merge/pre-push）
+└── info/
+    └── exclude          # 本地忽略规则</code></pre>
+
+<h3>运行时状态文件（按需创建）</h3>
+<table>
+<thead><tr><th>文件</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>MERGE_HEAD</code> / <code>CHERRY_PICK_HEAD</code> / <code>REVERT_HEAD</code></td><td>进行中的合并/拣选/回退的源提交。</td></tr>
+<tr><td><code>CONFLICTS</code></td><td>当前冲突集合（JSON）。</td></tr>
+<tr><td><code>AUTOSTASH</code></td><td>自动贮藏内容（JSON）。</td></tr>
+<tr><td><code>REBASE_TODO</code> / <code>REBASE_INDEX</code> / <code>REBASE_PLAN</code></td><td>进行中的变基状态。</td></tr>
+<tr><td><code>BISECT_LOG</code></td><td>二分查找日志。</td></tr>
+<tr><td><code>stash_list</code></td><td>贮藏条目列表。</td></tr>
+<tr><td><code>sm.lock</code></td><td>仓库级锁（检查与合并时使用）。</td></tr>
+</tbody>
+</table>
+
+<!-- ============================ OBJECTS ============================ -->
+<h2 id="objects">对象格式 <a class="anchor" href="#objects">#</a></h2>
+
+<h3>哈希与松散对象</h3>
+<ul>
+  <li>算法：<b>SHA-256</b>，32 字节摘要，64 位小写十六进制。</li>
+  <li>对象 ID 计算方式：<code>SHA256("&lt;type&gt; &lt;len&gt;\0&lt;payload&gt;")</code>，类型为 <code>blob</code>/<code>tree</code>/<code>commit</code>/<code>tag</code>。</li>
+  <li>磁盘存储：在帧化负载外再套一层 <b>zlib</b> 压缩，路径为 <code>objects/&lt;hex[0:2]&gt;/&lt;hex[2:]&gt;</code>。</li>
+  <li>相同内容自动去重（已存在则跳过写入）。</li>
+</ul>
+
+<h3>Tree</h3>
+<pre><code>每个条目: "&lt;mode&gt; &lt;name&gt;\0" + 32 字节原始哈希
+条目按 name 的字典序排列</code></pre>
+<p>模式使用补零的 <b>6 位十进制</b>（例如普通文件 <code>033188</code>）；显示时通过 <code>FileModeFormat.ToOctal</code> 呈现为八进制 <code>100644</code>。文件模式值：普通 <code>33188</code>、可执行 <code>33261</code>、符号链接 <code>40960</code>、目录 <code>16384</code>、子模块 <code>57344</code>。</p>
+
+<h3>Commit</h3>
+<pre><code>tree &lt;64hex&gt;
+parent &lt;64hex&gt;            （0 个或多个）
+author &lt;name&gt; &lt;email&gt; &lt;unix秒&gt; &lt;±HHMM&gt;
+committer &lt;name&gt; &lt;email&gt; &lt;unix秒&gt; &lt;±HHMM&gt;
+&lt;额外头&gt; &lt;值&gt;            （0 个或多个）
+
+&lt;消息&gt;</code></pre>
+<p>负载强制使用 LF 换行（换行符参与哈希，因此必须规范化）。</p>
+
+<h3>Tag（附注标签）</h3>
+<pre><code>object &lt;64hex&gt;
+type &lt;blob|tree|commit|tag&gt;
+tag &lt;name&gt;
+tagger &lt;name&gt; &lt;email&gt; &lt;unix秒&gt; &lt;±HHMM&gt;
+
+&lt;消息&gt;</code></pre>
+
+<h3>Reflog 行格式</h3>
+<pre><code>&lt;old64hex&gt; &lt;new64hex&gt; &lt;name&gt; &lt;email&gt; &lt;unix秒&gt; &lt;±HHMM&gt;\t&lt;message&gt;\n</code></pre>
+
+<h3>索引文件</h3>
+<ul>
+  <li>12 字节头：ASCII <code>DIRC</code>、int32 小端版本 <code>2</code>、int32 小端条目数。</li>
+  <li>每条目固定字段 78 字节，后跟 UTF-8 路径与 NUL 填充到 8 字节边界。</li>
+  <li>文件末尾附加 32 字节 SHA-256 校验和，<code>Load</code> 时校验；损坏或外部改动的索引会被拒绝。</li>
+  <li>条目按路径字典序排列，通过临时文件 + 原子移动保存。</li>
+</ul>
+
+<h3>锁</h3>
+<p><code>LockFile</code> 以 <code>CreateNew</code> 独占方式获取锁，写入进程 ID 与机器名，轮询退避（初始 50ms，上限 500ms，默认超时 3 秒）。超过 5 分钟的陈旧锁会被自动打破。仓库级锁文件为 <code>.sm/sm.lock</code>。</p>
+
+<!-- ============================ PROTOCOL ============================ -->
+<h2 id="protocol">远程协议与服务器 <a class="anchor" href="#protocol">#</a></h2>
+
+<h3>传输方案</h3>
+<p><code>sm</code> 的默认传输是自有协议 <code>sm://</code>：在 TCP 之上使用自定义二进制帧与握手。HTTP/HTTPS 与 SSH 保留为<b>兼容承载</b>（通过 <code>sm serve --http</code> / <code>--stdio</code> 启用），不再是默认方式。</p>
+<table>
+<thead><tr><th>方案</th><th>实现</th><th>默认</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><code>sm://</code></td><td>SmTcpTransport</td><td>是</td><td>原生二进制帧协议，TCP 端口默认 <code>9418</code>。</td></tr>
+<tr><td><code>file://</code></td><td>FileTransport</td><td>—</td><td>直接访问本地仓库目录。</td></tr>
+<tr><td><code>http://</code> / <code>https://</code></td><td>HttpTransport</td><td>—</td><td>兼容承载：JSON over HTTP，Bearer Token 认证。</td></tr>
+<tr><td><code>ssh://</code></td><td>SshTransport</td><td>—</td><td>兼容承载：通过系统 <code>ssh</code> 运行远程 <code>sm serve --stdio</code>。</td></tr>
+</tbody>
+</table>
+<p>URL 必须以带 <code>://</code> 的方案开头。scp 风格 <code>user@host:path</code> 不被支持。</p>
+
+<h3>原生 sm:// 帧格式</h3>
+<p>每条消息是一个固定 12 字节头部 + 变长负载的二进制帧：</p>
+<pre><code>+--------+---------+-------+-------+-------------------+
+| magic  | version | type  | flags | payload length    |
+| 4 字节 | 1 字节  | 1 字节| 2 字节| 4 字节（大端）    |
++--------+---------+-------+-------+-------------------+
+| payload: UTF-8 JSON，length 字节                      |
++------------------------------------------------------+
+
+magic = ASCII "SMP1"   frame version = 1   flags 保留（0）</code></pre>
+<p>帧类型：<code>1 Hello</code>、<code>2 HelloAck</code>、<code>3 Request</code>、<code>4 Response</code>、<code>5 Error</code>、<code>6 Bye</code>、<code>7 Ping</code>、<code>8 Pong</code>。负载沿用同一套 JSON 方法语义，因此服务端只有一份方法派发表。</p>
+
+<h3>握手与协商</h3>
+<ol>
+  <li>客户端建立 TCP 连接后发送 <code>Hello</code> 帧：<code>{"protocol":"sm","version":"1.0","frameVersion":1,"capabilities":[...],"token":"..."}</code>。</li>
+  <li>服务端校验主版本（必须为 <code>1</code>）、帧版本与可选令牌，成功则回 <code>HelloAck</code>（含 <code>protocol</code>、<code>version</code>、<code>frameVersion</code> 与能力列表），失败回 <code>Error</code> 帧并关闭连接。</li>
+  <li>此后每个 <code>Request</code> 帧携带数字 <code>id</code>，服务端在 <code>Response</code> 中回显；<code>Ping/Pong</code> 用于保活，<code>Bye</code> 用于优雅关闭。</li>
+</ol>
+<p>协议标识为 <code>sm/1.0</code>（主版本 <code>1</code> 必须匹配），二进制帧版本为 <code>1</code>，两者独立演进。对象在负载中同样以“未压缩负载 + Base64”传输：</p>
+<pre><code>{"hash":"&lt;64hex&gt;","type":"Blob|Tree|Commit|Tag","data":"&lt;base64&gt;"}</code></pre>
+
+<h3>方法表</h3>
+<p>原生帧、stdio 与 HTTP 共享下列方法：<code>hello</code>、<code>get-head-commit</code>、<code>get-current-branch</code>、<code>list-branches</code>、<code>get-branch</code>、<code>set-branch</code>、<code>create-branch</code>、<code>delete-branch</code>、<code>list-tags</code>、<code>get-tag</code>、<code>set-tag</code>、<code>delete-tag</code>、<code>get-remote-branch</code>、<code>set-remote-branch</code>、<code>delete-remote-branch</code>、<code>list-remote-branches</code>、<code>read-object-raw</code>、<code>read-object-with-type</code>、<code>object-exists</code>、<code>write-object-raw</code>、<code>write-objects-batch</code>、<code>is-repository</code>、<code>find-merge-base</code>、<code>is-ancestor</code>、<code>collect-objects</code>、<code>quit</code>。</p>
+
+<h3>HTTP 兼容端点</h3>
+<table>
+<thead><tr><th>方法</th><th>路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/sm/head</code></td><td>HEAD 提交与分支。</td></tr>
+<tr><td>GET/POST</td><td><code>/sm/refs/heads</code> / <code>…/&lt;branch&gt;</code></td><td>列出/读取/更新/删除分支。</td></tr>
+<tr><td>GET/POST/DELETE</td><td><code>/sm/refs/tags</code> / <code>…/&lt;tag&gt;</code></td><td>标签管理。</td></tr>
+<tr><td>GET/POST/DELETE</td><td><code>/sm/refs/remotes/&lt;r&gt;/&lt;b&gt;</code></td><td>远程跟踪引用。</td></tr>
+<tr><td>GET/POST</td><td><code>/sm/objects/&lt;hash&gt;</code></td><td>读取（原始存储字节）/ 写入对象。</td></tr>
+<tr><td>POST</td><td><code>/sm/objects/batch</code></td><td>批量写入对象。</td></tr>
+<tr><td>POST</td><td><code>/sm/collect-objects</code></td><td>按 wants/haves 协商传输。</td></tr>
+<tr><td>POST</td><td><code>/sm/merge-base</code> / <code>/sm/ancestor</code></td><td>祖先与基点查询。</td></tr>
+<tr><td>GET</td><td><code>/sm/health</code> / <code>/sm/is-repo</code></td><td>健康检查。</td></tr>
+</tbody>
+</table>
+
+<h3>认证</h3>
+<table>
+<thead><tr><th>场景</th><th>机制</th></tr></thead>
+<tbody>
+<tr><td>sm:// 客户端</td><td>URL user-info（<code>sm://token@host/</code>）&gt; <code>SM_TOKEN_&lt;REMOTE&gt;</code> &gt; <code>SM_TOKEN</code>，随 Hello 帧发送。</td></tr>
+<tr><td>sm:// 服务端</td><td><code>SM_SERVE_TOKEN</code>；长度检查 + 恒定时间比较，未设置则不认证。</td></tr>
+<tr><td>HTTP 客户端</td><td>URL 内嵌令牌 &gt; <code>SM_TOKEN_&lt;REMOTE&gt;</code> &gt; <code>SM_TOKEN</code>，作为 <code>Authorization: Bearer</code>。</td></tr>
+<tr><td>HTTP 服务端</td><td><code>SM_SERVE_TOKEN</code>；使用长度检查 + 恒定时间比较。</td></tr>
+<tr><td>SSH</td><td>由系统 <code>ssh</code> 处理密钥/代理；<code>PasswordAuthentication=no</code>、<code>StrictHostKeyChecking=accept-new</code>。</td></tr>
+</tbody>
+</table>
+
+<h3>服务器示例</h3>
+<pre><code># 启动原生 sm:// 协议服务（默认）
+sm serve --path /srv/repo --port 9418 --bind +
+
+# 可选：兼容承载
+sm serve --path /srv/repo --http      # HTTP
+sm serve --path /srv/repo --stdio     # stdio（供 SSH 使用）
+
+# 要求认证
+#   Windows:  $env:SM_SERVE_TOKEN = "secret"
+#   Linux:    export SM_SERVE_TOKEN=secret
+
+# 添加远程并推送
+sm remote add origin sm://host:9418/
+sm push -u origin main
+# 携带令牌：sm://token@host:9418/</code></pre>
+
+<div class="warn"><b>安全：</b>原生 <code>sm://</code> 与 HTTP 均为明文传输、未内置 TLS 加密，且每进程只服务一个仓库。绑定非回环地址前请务必设置 <code>SM_SERVE_TOKEN</code>。可在前面放置反向代理或 VPN 来提供加密。</div>
+
+<!-- ============================ ARCHITECTURE ============================ -->
+<h2 id="architecture">架构与执行流程 <a class="anchor" href="#architecture">#</a></h2>
+<p>代码组织为若干职责清晰的模块（均为命名空间 <code>SourceManager</code>）：</p>
+<table>
+<thead><tr><th>模块</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td><code>Program</code> / <code>ArgumentParser</code></td><td>命令注册、全局选项、解析与分发、帮助。</td></tr>
+<tr><td><code>Repository</code></td><td>仓库发现、初始化、检出、打开、索引/对象/引用/合并门面。</td></tr>
+<tr><td><code>ObjectStore</code></td><td>松散对象的读写、哈希、数据统计、GC 辅助。</td></tr>
+<tr><td><code>RefStore</code></td><td>HEAD、分支、标签、远程引用、reflog 与各类状态文件。</td></tr>
+<tr><td><code>Index</code></td><td>暂存区的加载/保存与条目管理。</td></tr>
+<tr><td><code>DiffEngine</code> / <code>MergeEngine</code></td><td>差异计算（Myers/Patience/Histogram）与三方合并。</td></tr>
+<tr><td><code>RevisionResolver</code></td><td>修订语法解析。</td></tr>
+<tr><td><code>Transport</code> 系列 + <code>SmServer</code> + <code>SmWireProtocol</code></td><td>sm:// 原生协议、file/http/ssh 传输与 HTTP/stdio/TCP 服务器。</td></tr>
+<tr><td><code>ConflictState</code> / <code>Autostash</code> / <code>RebasePlan</code></td><td>进行中操作的状态持久化。</td></tr>
+<tr><td><code>JsonOut</code></td><td>机器可读输出的信封与辅助。</td></tr>
+</tbody>
+</table>
+
+<h3>一次命令调用的流程</h3>
+<ol>
+  <li><code>Main</code> 构建根解析器（注册别名、全局选项与所有命令）。</li>
+  <li>解析参数：命中命令则把剩余参数交给该命令的子解析器；否则处理 <code>--version</code>/帮助/未知命令。</li>
+  <li>解析错误逐条以 <code>error:</code> 输出并返回 1。</li>
+  <li>调用命令处理器的 <code>Execute(ParseResult)</code>，在仓库上下文（<code>Repository.Find</code> 向上查找）中执行。</li>
+  <li>未捕获异常统一转为 <code>fatal: &lt;message&gt;</code> 并返回 128。</li>
+</ol>
+
+<!-- ============================ TESTING ============================ -->
+<h2 id="testing">测试 <a class="anchor" href="#testing">#</a></h2>
+<p>仓库包含一个 PowerShell 测试脚本 <code>tests/run-tests.ps1</code>（约 95 KB），覆盖命令行为。使用 PowerShell 7+ 运行：</p>
+<pre><code>pwsh ./tests/run-tests.ps1</code></pre>
+<p>先确保已 <code>dotnet build</code> 并让 <code>sm</code> 可执行文件位于 <code>PATH</code>，或在脚本中按需指向构建产物。</p>
+
+<div class="footer">
+  <p>SourceManager <code>sm</code> v1.0.0 · 目标框架 .NET 10 · 本文档由源码分析生成。命令与行为以实际二进制为准。</p>
+  <p><a href="#overview">返回顶部</a></p>
+</div>
+
+</main>
+</div>
+<button id="totop" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  var q = document.getElementById('q');
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('#nav a'));
+  var navMap = {};
+  navLinks.forEach(function(a){ navMap[a.getAttribute('href')] = a; });
+
+  // Search filter: matches h2/h3 headings and command articles.
+  var targets = Array.prototype.slice.call(document.querySelectorAll('main > h2, main > h3, main > .cmd, main > section, main > p, main > .grid, main > ul, main > ol, main > table, main > pre, main > .note, main > .warn, main > .tip'));
+  function clearMarks(root){
+    root.querySelectorAll('mark').forEach(function(m){
+      var p = m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize();
+    });
+  }
+  function runFilter(term){
+    term = term.trim().toLowerCase();
+    if(!term){
+      targets.forEach(function(el){ el.classList.remove('hide'); });
+      clearMarks(document.body);
+      return;
+    }
+    targets.forEach(function(el){
+      var text = (el.dataset.search || el.textContent || '').toLowerCase();
+      el.classList.toggle('hide', text.indexOf(term) === -1);
+    });
+  }
+  q.addEventListener('input', function(){ runFilter(q.value); });
+  q.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ q.value=''; runFilter(''); } });
+
+  // Scroll spy
+  var ids = navLinks.map(function(a){ return a.getAttribute('href').slice(1); });
+  var sections = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
+  function onScroll(){
+    var pos = window.scrollY + 120, current = sections[0];
+    sections.forEach(function(s){ if(s.offsetTop <= pos) current = s; });
+    navLinks.forEach(function(a){ a.classList.remove('active'); });
+    if(current && navMap['#'+current.id]) navMap['#'+current.id].classList.add('active');
+    var b = document.getElementById('totop');
+    b.style.display = window.scrollY > 600 ? 'block' : 'none';
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+
+  // When clicking a nav link while a filter is active, clear it so target is visible.
+  navLinks.forEach(function(a){ a.addEventListener('click', function(){ if(q.value){ q.value=''; runFilter(''); } }); });
+})();
+</script>
+</body>
+</html>
